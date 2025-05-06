@@ -1,0 +1,8 @@
+services:
+  plexcost:
+    image: ${DOCKER_REGISTRY-}plexcost
+    build:
+      context: PlexCost
+      dockerfile: Dockerfile
+    env_file:
+    - PlexCost\.env

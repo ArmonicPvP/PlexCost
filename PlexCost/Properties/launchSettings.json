@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "PlexCost": {
+      "commandName": "Project"
+    },
+    "Container (Dockerfile)": {
+      "commandName": "Docker"
+    }
+  }
+}
