@@ -85,7 +85,3 @@ Log levels: Debug, Information, Warning, Error, Critical.
 ## Contributing
 
 Contributions, issues, and feature requests are welcome. Please open an issue or submit a pull request.
-
-## License
-
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
