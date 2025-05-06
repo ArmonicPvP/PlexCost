@@ -14,11 +14,23 @@
     }
 
     /// <summary>
+    /// Totals over all months for a single user.
+    /// </summary>
+    public class TotalSavingsJson
+    {
+        public double TotalMaximumSavings { get; set; }
+        public double TotalAverageSavings { get; set; }
+        public double TotalSubscriptionCosts { get; set; }
+    }
+
+    /// <summary>
     /// Container for a single user's name and their per-month savings.
     /// </summary>
     public class UserSavingsJson
     {
         public string UserName { get; set; } = "";
         public List<MonthlySavingsJson> MonthlySavings { get; set; } = new();
+
+        public TotalSavingsJson Totals { get; set; } = new();
     }
 }

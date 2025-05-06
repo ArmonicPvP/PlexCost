@@ -16,7 +16,7 @@ namespace PlexCost.Configuration
         public double BaseSubscriptionPrice { get; set; }
 
         // File paths for input and output CSVs.
-        public string DataCsvPath { get; set; } = "";
+        public string DataJsonPath { get; set; } = "";
         public string SavingsJsonPath { get; set; } = "";
 
         // Network settings for calling the Tautulli API.
@@ -47,7 +47,7 @@ namespace PlexCost.Configuration
             config.BaseSubscriptionPrice = double.TryParse(priceEnv, out var price) ? price : 13.99;
 
             // Paths for CSV files, with fallbacks
-            config.DataCsvPath = GetEnvironmentVariable("DATA_JSON_PATH") ?? "data.json";
+            config.DataJsonPath = GetEnvironmentVariable("DATA_JSON_PATH") ?? "data.json";
             config.SavingsJsonPath = GetEnvironmentVariable("SAVINGS_JSON_PATH") ?? "savings.json";
 
             // Network settings

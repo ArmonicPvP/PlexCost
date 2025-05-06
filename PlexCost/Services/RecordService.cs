@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+﻿using PlexCost.Models;
 using System.Text;
 using System.Text.Json;
-using PlexCost.Models;
 using static PlexCost.Services.LoggerService;
 
 namespace PlexCost.Services
@@ -114,6 +110,9 @@ namespace PlexCost.Services
                         _allData[userId] = new UserDataJson { UserName = record.User };
 
                     _allData[userId].Records.Add(dataRec);
+
+                    LogDebug("Wrote data.json record: {@dataRec}", dataRec);
+
                     _knownRecords.Add((userId, guid));
                     newlyWritten++;
                 }
@@ -133,7 +132,8 @@ namespace PlexCost.Services
                 var opts = new JsonSerializerOptions { WriteIndented = true };
                 var outJson = JsonSerializer.Serialize(_allData, opts);
                 File.WriteAllText(_dataJsonPath, outJson, Encoding.UTF8);
-                LogInformation("Wrote updated data.json with {New} new records.", newlyWritten);
+
+                LogDebug("Wrote updated data.json with {New} new records.", newlyWritten);
             }
             catch (Exception ex)
             {

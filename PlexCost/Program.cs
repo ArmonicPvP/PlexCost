@@ -1,7 +1,7 @@
 ﻿using PlexCost.Configuration;
 using PlexCost.Services;
-using Serilog;                    // For Log.Fatal and CloseAndFlush
-using Serilog.Context;            // For LogContext.PushProperty
+using Serilog;
+using Serilog.Context;
 using static PlexCost.Services.LoggerService;
 
 namespace PlexCost
@@ -21,7 +21,7 @@ namespace PlexCost
                 var config = PlexCostConfig.FromEnvironment();
 
                 // Initialize record tracking
-                var recordService = new RecordService(config.DataCsvPath);
+                var recordService = new RecordService(config.DataJsonPath);
 
                 // Main loop: run, then wait HoursBetweenRuns
                 while (true)
@@ -57,7 +57,7 @@ namespace PlexCost
                             // Recalculate and write savings.csv
                             SaveService.ComputeSavingsJson(
                                 config.BaseSubscriptionPrice,
-                                config.DataCsvPath,
+                                config.DataJsonPath,
                                 config.SavingsJsonPath
                             );
                         }
