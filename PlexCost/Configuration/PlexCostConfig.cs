@@ -18,6 +18,7 @@ namespace PlexCost.Configuration
         // File paths for input and output CSVs.
         public string DataJsonPath { get; set; } = "";
         public string SavingsJsonPath { get; set; } = "";
+        public string LogsJsonPath { get; set; } = "";
 
         // Network settings for calling the Tautulli API.
         public string IpAddress { get; set; } = "";
@@ -51,6 +52,7 @@ namespace PlexCost.Configuration
             // Paths for CSV files, with fallbacks
             config.DataJsonPath = GetEnvironmentVariable("DATA_JSON_PATH") ?? "data.json";
             config.SavingsJsonPath = GetEnvironmentVariable("SAVINGS_JSON_PATH") ?? "savings.json";
+            config.LogsJsonPath = GetEnvironmentVariable("LOGS_JSON_PATH") ?? "logs/plexcost-.json";
 
             // Network settings
             config.IpAddress = GetEnvironmentVariable("IP_ADDRESS") ?? "127.0.0.1";
@@ -62,7 +64,6 @@ namespace PlexCost.Configuration
             config.DiscordBotToken = GetEnvironmentVariable("DISCORD_BOT_TOKEN") ?? "";
 
             // Ensure required settings are set
-            config.Validate();
             return config;
         }
 
@@ -70,7 +71,7 @@ namespace PlexCost.Configuration
         /// Ensures that all critical environment variables are present;
         /// logs a fatal error and throws if anything is missing.
         /// </summary>
-        private void Validate()
+        public void Validate()
         {
             // Dictionary of variable names → their current values
             var required = new Dictionary<string, string?>

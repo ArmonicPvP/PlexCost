@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Formatting.Json;
+using PlexCost.Configuration;
 
 namespace PlexCost.Services
 {
@@ -10,6 +11,8 @@ namespace PlexCost.Services
     /// </summary>
     public static class LoggerService
     {
+
+        
         // Factory used to create ILogger instances
         private static readonly ILoggerFactory _factory;
 
@@ -18,6 +21,8 @@ namespace PlexCost.Services
 
         static LoggerService()
         {
+            var config = PlexCostConfig.FromEnvironment();
+
             // Configure Serilog to write JSON-formatted logs to console and to rolling files
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()                  // Capture Debug and above
@@ -25,7 +30,7 @@ namespace PlexCost.Services
                 .WriteTo.Console(new JsonFormatter(renderMessage: true))
                 .WriteTo.File(
                     new JsonFormatter(renderMessage: true),
-                    path: "logs/plexcost-.json",
+                    path: config.LogsJsonPath,
                     rollingInterval: RollingInterval.Day,
                     retainedFileCountLimit: 7
                 )
