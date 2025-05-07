@@ -9,7 +9,7 @@
         public long DateStopped { get; set; }
         public double MaximumPrice { get; set; }
         public double AveragePrice { get; set; }
-        public List<string> SubscriptionNames { get; set; } = new();
+        public List<string> SubscriptionNames { get; set; } = [];
     }
 
     /// <summary>
@@ -18,6 +18,6 @@
     public class UserDataJson
     {
         public string UserName { get; set; } = "";
-        public List<DataRecordJson> Records { get; set; } = new();
+        public List<DataRecordJson> Records { get; set; } = [];
     }
 }

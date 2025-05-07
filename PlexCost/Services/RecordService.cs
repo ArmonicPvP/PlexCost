@@ -12,8 +12,8 @@ namespace PlexCost.Services
     public class RecordService
     {
         private readonly string _dataJsonPath;
-        private readonly Dictionary<int, UserDataJson> _allData = new();
-        private readonly HashSet<(int userId, string guid)> _knownRecords = new();
+        private readonly Dictionary<int, UserDataJson> _allData = [];
+        private readonly HashSet<(int userId, string guid)> _knownRecords = [];
 
         public RecordService(string dataJsonPath)
         {
@@ -102,7 +102,7 @@ namespace PlexCost.Services
                                                 .Split(';', StringSplitOptions.RemoveEmptyEntries)
                                                 .Select(s => s.Trim())
                                                 .ToList()
-                                             ?? new List<string>()
+                                             ?? []
                     };
 
                     // Ensure user bucket exists

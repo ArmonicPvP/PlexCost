@@ -22,10 +22,10 @@ namespace PlexCost
                 new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
             );
 
-            var raw = root?.Response?.Data?.Data ?? new List<HistoryRawRecord>();
+            var raw = root?.Response?.Data?.Data ?? [];
 
             // Keep only those with ≥80% watched, map to our lighter model
-            return raw
+            return [.. raw
                 .Where(r => r.Watched_status >= 0.8)
                 .Select(r => new HistoryRecord
                 {
@@ -33,8 +33,7 @@ namespace PlexCost
                     User = r.User ?? "",
                     Guid = r.Guid ?? "",
                     DateStopped = r.Stopped
-                })
-                .ToList();
+                })];
         }
     }
 }

@@ -28,7 +28,7 @@ namespace PlexCost
                 $"&X-Plex-Token={plexToken}";
 
             const int MaxAttempts = 4;
-            int[] backoffSeconds = { 60, 90, 120 };
+            int[] backoffSeconds = [60, 90, 120];
 
             for (int attempt = 1; attempt <= MaxAttempts; attempt++)
             {
@@ -74,7 +74,7 @@ namespace PlexCost
                         new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
                     );
 
-                    var offers = root?.MediaContainer?.Availability ?? new List<PricingAvailability>();
+                    var offers = root?.MediaContainer?.Availability ?? [];
 
                     // Collect buy/rent prices for max & avg calculations
                     var buyRentPrices = offers

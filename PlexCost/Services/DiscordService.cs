@@ -44,7 +44,7 @@ namespace PlexCost.Services
                 allSavings = JsonSerializer.Deserialize<Dictionary<int, UserSavingsJson>>(
                     json,
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
-                ) ?? new Dictionary<int, UserSavingsJson>();
+                ) ?? [];
             }
             catch (Exception ex)
             {

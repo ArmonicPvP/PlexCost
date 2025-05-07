@@ -30,12 +30,12 @@ namespace PlexCost.Services
                 var json = File.ReadAllText(dataJsonPath, Encoding.UTF8);
                 var jsonOpts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
                 allData = JsonSerializer.Deserialize<Dictionary<int, UserDataJson>>(json, jsonOpts)
-                                 ?? new Dictionary<int, UserDataJson>();
+                                 ?? [];
             }
             catch (Exception ex)
             {
                 LogError("Failed to parse data.json: {Error}", ex.Message);
-                allData = new Dictionary<int, UserDataJson>();
+                allData = [];
             }
 
             // 2) Re-aggregate into monthly groups
@@ -62,10 +62,10 @@ namespace PlexCost.Services
 
                     // 2b) collect each month's subscription sets
                     if (!monthlySubs.ContainsKey(key))
-                        monthlySubs[key] = new List<HashSet<string>>();
+                        monthlySubs[key] = [];
 
                     var platformSet = new HashSet<string>(
-                        rec.SubscriptionNames ?? new List<string>(),
+                        rec.SubscriptionNames ?? [],
                            StringComparer.OrdinalIgnoreCase
                     );
 
@@ -124,7 +124,7 @@ namespace PlexCost.Services
                     MaximumSavings = Math.Round(mSum, 2),
                     AverageSavings = Math.Round(aSum, 2),
                     SubscriptionCosts = Math.Round(cCost, 2),
-                    Subscriptions = set.OrderBy(x => x).ToList()
+                    Subscriptions = [.. set.OrderBy(x => x)]
                 };
 
 
@@ -195,7 +195,7 @@ namespace PlexCost.Services
                 foreach (var plat in allContentPlatforms[i])
                 {
                     if (!coverage.ContainsKey(plat))
-                        coverage[plat] = new HashSet<int>();
+                        coverage[plat] = [];
                     coverage[plat].Add(i);
                 }
             }

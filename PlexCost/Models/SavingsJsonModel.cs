@@ -10,7 +10,7 @@
         public double MaximumSavings { get; set; }
         public double AverageSavings { get; set; }
         public double SubscriptionCosts { get; set; }
-        public List<string> Subscriptions { get; set; } = new();
+        public List<string> Subscriptions { get; set; } = [];
     }
 
     /// <summary>
@@ -29,7 +29,7 @@
     public class UserSavingsJson
     {
         public string UserName { get; set; } = "";
-        public List<MonthlySavingsJson> MonthlySavings { get; set; } = new();
+        public List<MonthlySavingsJson> MonthlySavings { get; set; } = [];
 
         public TotalSavingsJson Totals { get; set; } = new();
     }
