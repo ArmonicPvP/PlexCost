@@ -210,7 +210,7 @@ namespace PlexCost.Services
                     .First();
 
                 var newly = best.Value.Where(idx => uncovered.Contains(idx)).ToList();
-                if (!newly.Any()) break;
+                if (newly.Count == 0) break;
 
                 chosen.Add(best.Key);
                 foreach (var idx in newly) uncovered.Remove(idx);

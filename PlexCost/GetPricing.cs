@@ -84,8 +84,8 @@ namespace PlexCost
                         .Select(o => o.Price!.Value)
                         .ToList();
 
-                    var maxPrice = buyRentPrices.Any() ? buyRentPrices.Max() : (double?)null;
-                    var avgPrice = buyRentPrices.Any() ? buyRentPrices.Average() : (double?)null;
+                    var maxPrice = buyRentPrices.Count != 0 ? buyRentPrices.Max() : (double?)null;
+                    var avgPrice = buyRentPrices.Count != 0 ? buyRentPrices.Average() : (double?)null;
 
                     // Gather all subscription platform names
                     var subs = offers
@@ -95,7 +95,7 @@ namespace PlexCost
                         .Distinct()
                         .ToList();
 
-                    var subNames = subs.Any() ? string.Join(";", subs) : null;
+                    var subNames = subs.Count != 0 ? string.Join(";", subs) : null;
 
                     return new PricingSummary
                     {
