@@ -1,7 +1,7 @@
-﻿using System.Net.Http.Headers;
+﻿using PlexCost.Models;
+using System.Net.Http.Headers;
 using System.Text.Json;
 using static PlexCost.Services.LoggerService;
-using PlexCost.Models;
 
 namespace PlexCost
 {

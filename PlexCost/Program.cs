@@ -19,7 +19,7 @@ namespace PlexCost
             {
 
                 var config = PlexCostConfig.FromEnvironment();
-                config.Validate();
+                PlexCostConfig.Validate(config);
 
                 // Initialize Discord bot
                 var discord = new DiscordService(config.DiscordBotToken, config.SavingsJsonPath);

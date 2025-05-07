@@ -1,7 +1,7 @@
-﻿using System.Text.Json;
-using Discord;
+﻿using Discord;
 using Discord.WebSocket;
 using PlexCost.Models;
+using System.Text.Json;
 using static PlexCost.Services.LoggerService;
 
 namespace PlexCost.Services

@@ -1,5 +1,5 @@
-﻿using System.Text.Json;
-using PlexCost.Models;
+﻿using PlexCost.Models;
+using System.Text.Json;
 
 namespace PlexCost
 {

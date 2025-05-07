@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace PlexCost.Models
+﻿namespace PlexCost.Models
 {
     /// <summary>
     /// Represents the raw JSON returned by Tautulli’s history API,

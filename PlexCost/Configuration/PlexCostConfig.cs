@@ -1,4 +1,5 @@
-﻿using static PlexCost.Services.LoggerService;
+﻿using PlexCost.Models;
+using static PlexCost.Services.LoggerService;
 using static System.Environment;
 
 namespace PlexCost.Configuration
@@ -9,37 +10,16 @@ namespace PlexCost.Configuration
     /// </summary>
     public class PlexCostConfig
     {
-        // How many hours to wait between each run of the main loop.
-        public int HoursBetweenRuns { get; set; }
-
-        // Base cost of a Plex subscription, used to compute savings.
-        public double BaseSubscriptionPrice { get; set; }
-
-        // File paths for input and output CSVs.
-        public string DataJsonPath { get; set; } = "";
-        public string SavingsJsonPath { get; set; } = "";
-        public string LogsJsonPath { get; set; } = "";
-
-        // Network settings for calling the Tautulli API.
-        public string IpAddress { get; set; } = "";
-        public string Port { get; set; } = "";
-
-        // Credentials for API access.
-        public string ApiKey { get; set; } = "";
-        public string PlexToken { get; set; } = "";
-
-        public string DiscordBotToken { get; set; } = "";
-
         /// <summary>
         /// Creates a new config instance by reading environment variables,
         /// applying defaults, then validating required values.
         /// </summary>
-        public static PlexCostConfig FromEnvironment()
+        public static PlexCostConfigModel FromEnvironment()
         {
 
             Console.WriteLine("Reading environment variables for configuration...");
 
-            var config = new PlexCostConfig();
+            var config = new PlexCostConfigModel();
 
             // HOURS_BETWEEN_RUNS → default 6 hours
             string? hrsEnv = GetEnvironmentVariable("HOURS_BETWEEN_RUNS");
@@ -71,14 +51,14 @@ namespace PlexCost.Configuration
         /// Ensures that all critical environment variables are present;
         /// logs a fatal error and throws if anything is missing.
         /// </summary>
-        public void Validate()
+        public static void Validate(PlexCostConfigModel config)
         {
             // Dictionary of variable names → their current values
             var required = new Dictionary<string, string?>
             {
-                ["API_KEY"] = ApiKey,
-                ["PLEX_TOKEN"] = PlexToken,
-                ["DISCORD_BOT_TOKEN"] = DiscordBotToken
+                ["API_KEY"] = config.ApiKey,
+                ["PLEX_TOKEN"] = config.PlexToken,
+                ["DISCORD_BOT_TOKEN"] = config.DiscordBotToken
             };
 
             // For each required variable, make sure it's not empty
