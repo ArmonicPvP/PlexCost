@@ -2,12 +2,18 @@
 using PlexCost.Services;
 using Serilog;
 using Serilog.Context;
+using System.Text.Json;
 using static PlexCost.Services.LoggerService;
 
 namespace PlexCost
 {
     public class Program
     {
+        public static readonly JsonSerializerOptions jsonOptions = new()
+        {
+            PropertyNameCaseInsensitive = true
+        };
+
         /// <summary>
         /// Application entry point: loads config, then loops indefinitely
         /// fetching history, appending new records, recomputing savings,

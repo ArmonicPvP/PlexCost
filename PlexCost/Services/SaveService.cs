@@ -28,8 +28,7 @@ namespace PlexCost.Services
             try
             {
                 var json = File.ReadAllText(dataJsonPath, Encoding.UTF8);
-                var jsonOpts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                allData = JsonSerializer.Deserialize<Dictionary<int, UserDataJson>>(json, jsonOpts)
+                allData = JsonSerializer.Deserialize<Dictionary<int, UserDataJson>>(json, Program.jsonOptions)
                                  ?? [];
             }
             catch (Exception ex)
@@ -165,8 +164,7 @@ namespace PlexCost.Services
             // 5) Serialize & write savings.json
             try
             {
-                var opts = new JsonSerializerOptions { WriteIndented = true };
-                var outJson = JsonSerializer.Serialize(output, opts);
+                var outJson = JsonSerializer.Serialize(output, Program.jsonOptions);
                 File.WriteAllText(savingsJsonPath, outJson, Encoding.UTF8);
                 LogInformation("Wrote savings JSON to {Path}", savingsJsonPath);
             }

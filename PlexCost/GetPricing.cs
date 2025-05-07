@@ -71,7 +71,7 @@ namespace PlexCost
                     var json = await resp.Content.ReadAsStringAsync();
                     var root = JsonSerializer.Deserialize<PricingRoot>(
                         json,
-                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                        Program.jsonOptions
                     );
 
                     var offers = root?.MediaContainer?.Availability ?? [];

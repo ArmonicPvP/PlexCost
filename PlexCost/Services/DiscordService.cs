@@ -43,7 +43,7 @@ namespace PlexCost.Services
                 var json = File.ReadAllText(_savingsPath);
                 allSavings = JsonSerializer.Deserialize<Dictionary<int, UserSavingsJson>>(
                     json,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                    Program.jsonOptions
                 ) ?? [];
             }
             catch (Exception ex)

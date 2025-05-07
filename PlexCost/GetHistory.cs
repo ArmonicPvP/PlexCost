@@ -19,7 +19,7 @@ namespace PlexCost
             var json = await response.Content.ReadAsStringAsync();
             var root = JsonSerializer.Deserialize<HistoryRoot>(
                 json,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                Program.jsonOptions
             );
 
             var raw = root?.Response?.Data?.Data ?? [];

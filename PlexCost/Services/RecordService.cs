@@ -34,7 +34,7 @@ namespace PlexCost.Services
                 var json = File.ReadAllText(_dataJsonPath, Encoding.UTF8);
                 var dict = JsonSerializer.Deserialize<Dictionary<int, UserDataJson>>(
                     json,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }
+                    Program.jsonOptions
                 );
 
                 if (dict != null)
@@ -129,8 +129,7 @@ namespace PlexCost.Services
             // Write back full JSON
             try
             {
-                var opts = new JsonSerializerOptions { WriteIndented = true };
-                var outJson = JsonSerializer.Serialize(_allData, opts);
+                var outJson = JsonSerializer.Serialize(_allData, Program.jsonOptions);
                 File.WriteAllText(_dataJsonPath, outJson, Encoding.UTF8);
 
                 LogDebug("Wrote updated data.json with {New} new records.", newlyWritten);
