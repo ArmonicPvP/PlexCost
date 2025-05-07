@@ -65,14 +65,14 @@ namespace PlexCost.Services
 
             // Build an embed
             var embed = new EmbedBuilder()
-                .WithTitle($"Plex Savings for {match.UserName}")
+                .WithTitle($"# Plex Savings for {match.UserName}")
                 .WithColor(Discord.Color.DarkBlue);
 
             // Monthly breakdown
             foreach (var m in match.MonthlySavings.OrderBy(x => (x.Year, x.Month)))
             {
                 embed.AddField(
-                    $"{m.Month}/{m.Year}",
+                    $"**{m.Month}/{m.Year}**",
                     $"Max: ${m.MaximumSavings:F2}\nAvg: ${m.AverageSavings:F2}\nSubscriptions: ${m.SubscriptionCosts:F2}",
                     inline: false
                 );
