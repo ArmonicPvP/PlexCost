@@ -73,8 +73,8 @@ namespace PlexCost.Services
             {
                 embed.AddField(
                     $"{m.Month}/{m.Year}",
-                    $"Max: ${m.MaximumSavings:F2}\nAvg: ${m.AverageSavings:F2}\nCost: ${m.SubscriptionCosts:F2}",
-                    inline: true
+                    $"Max: ${m.MaximumSavings:F2}\nAvg: ${m.AverageSavings:F2}\nSubscriptions: ${m.SubscriptionCosts:F2}",
+                    inline: false
                 );
             }
 
@@ -84,7 +84,7 @@ namespace PlexCost.Services
                 "**Totals**",
                 $"Max: ${match.Totals.TotalMaximumSavings:F2}\n" +
                 $"Avg: ${match.Totals.TotalAverageSavings:F2}\n" +
-                $"Cost: ${match.Totals.TotalSubscriptionCosts:F2}"
+                $"Subscriptions: ${match.Totals.TotalSubscriptionCosts:F2}"
             );
 
             await command.RespondAsync(embed: embed.Build(), ephemeral: false);

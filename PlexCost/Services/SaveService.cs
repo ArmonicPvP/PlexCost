@@ -20,6 +20,7 @@ namespace PlexCost.Services
             {
                 LogWarning("data.json not found; emitting empty savings JSON.");
                 File.WriteAllText(savingsJsonPath, "{}");
+
                 return;
             }
 
