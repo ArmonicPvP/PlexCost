@@ -20,6 +20,11 @@ namespace PlexCost
 
                 var config = PlexCostConfig.FromEnvironment();
 
+                // Initialize Discord bot
+                var discord = new DiscordService(config.DiscordBotToken, config.SavingsJsonPath);
+                await discord.InitializeAsync();
+                LogInformation("Discord slash‐command service initialized.");
+
                 // Initialize record tracking
                 var recordService = new RecordService(config.DataJsonPath);
 

@@ -27,6 +27,8 @@ namespace PlexCost.Configuration
         public string ApiKey { get; set; } = "";
         public string PlexToken { get; set; } = "";
 
+        public string DiscordBotToken { get; set; } = "";
+
         /// <summary>
         /// Creates a new config instance by reading environment variables,
         /// applying defaults, then validating required values.
@@ -57,6 +59,7 @@ namespace PlexCost.Configuration
             // API credentials
             config.ApiKey = GetEnvironmentVariable("API_KEY") ?? "";
             config.PlexToken = GetEnvironmentVariable("PLEX_TOKEN") ?? "";
+            config.DiscordBotToken = GetEnvironmentVariable("DISCORD_BOT_TOKEN") ?? "";
 
             // Ensure required settings are set
             config.Validate();
@@ -73,7 +76,8 @@ namespace PlexCost.Configuration
             var required = new Dictionary<string, string?>
             {
                 ["API_KEY"] = ApiKey,
-                ["PLEX_TOKEN"] = PlexToken
+                ["PLEX_TOKEN"] = PlexToken,
+                ["DISCORD_BOT_TOKEN"] = DiscordBotToken
             };
 
             // For each required variable, make sure it's not empty
