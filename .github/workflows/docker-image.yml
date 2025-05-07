@@ -15,4 +15,4 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag frontiergamers/plexcost:$(date +%s)
+      run: docker build . --file PlexCost/Dockerfile --tag frontiergamers/plexcost:$(date +%s)
