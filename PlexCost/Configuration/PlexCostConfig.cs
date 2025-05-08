@@ -43,6 +43,11 @@ namespace PlexCost.Configuration
             config.PlexToken = GetEnvironmentVariable("PLEX_TOKEN") ?? "";
             config.DiscordBotToken = GetEnvironmentVariable("DISCORD_BOT_TOKEN") ?? "";
 
+            // Log Analytics
+            config.LogAnalyticsEndpoint = GetEnvironmentVariable("LOG_ANALYTICS_ENDPOINT") ?? "";
+            config.LogAnalyticsDataCollectionRuleId = GetEnvironmentVariable("LOG_ANALYTICS_DCR_ID") ?? "";
+            config.LogAnalyticsStreamName = GetEnvironmentVariable("LOG_ANALYTICS_STREAM_NAME") ?? "PlexCostLogs";
+
             // Ensure required settings are set
             return config;
         }
@@ -58,7 +63,10 @@ namespace PlexCost.Configuration
             {
                 ["API_KEY"] = config.ApiKey,
                 ["PLEX_TOKEN"] = config.PlexToken,
-                ["DISCORD_BOT_TOKEN"] = config.DiscordBotToken
+                ["DISCORD_BOT_TOKEN"] = config.DiscordBotToken,
+                ["LOG_ANALYTICS_ENDPOINT"] = config.LogAnalyticsEndpoint,
+                ["LOG_ANALYTICS_DCR_ID"] = config.LogAnalyticsDataCollectionRuleId,
+                ["LOG_ANALYTICS_STREAM_NAME"] = config.LogAnalyticsStreamName,
             };
 
             // For each required variable, make sure it's not empty

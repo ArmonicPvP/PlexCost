@@ -22,5 +22,13 @@
         public string PlexToken { get; set; } = "";
 
         public string DiscordBotToken { get; set; } = "";
+
+        //Log Analytics
+        public string LogAnalyticsEndpoint { get; set; } = "";
+
+        public string LogAnalyticsDataCollectionRuleId { get; set; } = "";
+
+        public string LogAnalyticsStreamName { get; set; } = "";
+
     }
 }
