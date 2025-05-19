@@ -1,5 +1,4 @@
-﻿using System;
-using Azure.Identity;
+﻿using Azure.Identity;
 using Azure.Monitor.Ingestion;
 using Microsoft.Extensions.Logging;
 using PlexCost.Configuration;
@@ -15,13 +14,15 @@ namespace PlexCost.Services
         {
             var cfg = PlexCostConfig.FromEnvironment();
 
+            var logLevel = cfg.Debug ? LogEventLevel.Debug : LogEventLevel.Information;
+
             var ingestionClient = new LogsIngestionClient(
                 new Uri(cfg.LogAnalyticsEndpoint),
                 new DefaultAzureCredential()
             );
 
             Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Debug()
+                .MinimumLevel.Is(logLevel)
                 .Enrich.FromLogContext()
                 .WriteTo.Console(new JsonFormatter(renderMessage: true))
                 .WriteTo.File(
@@ -36,8 +37,7 @@ namespace PlexCost.Services
                         ingestionClient,
                         cfg.LogAnalyticsDataCollectionRuleId,
                         cfg.LogAnalyticsStreamName
-                    ),
-                    restrictedToMinimumLevel: LogEventLevel.Debug
+                    )
                 )
                 .CreateLogger();
 

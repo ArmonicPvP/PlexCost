@@ -48,6 +48,9 @@ namespace PlexCost.Configuration
             config.LogAnalyticsDataCollectionRuleId = GetEnvironmentVariable("LOG_ANALYTICS_DCR_ID") ?? "";
             config.LogAnalyticsStreamName = GetEnvironmentVariable("LOG_ANALYTICS_STREAM_NAME") ?? "PlexCostLogs";
 
+            // Debugging logs
+            config.Debug = bool.TryParse(GetEnvironmentVariable("DEBUG"), out var debug) && debug;
+
             // Ensure required settings are set
             return config;
         }

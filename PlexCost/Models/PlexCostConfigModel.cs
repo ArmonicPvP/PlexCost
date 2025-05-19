@@ -29,6 +29,7 @@
         public string LogAnalyticsDataCollectionRuleId { get; set; } = "";
 
         public string LogAnalyticsStreamName { get; set; } = "";
+        public bool Debug { get; set; } = false;
 
     }
 }
