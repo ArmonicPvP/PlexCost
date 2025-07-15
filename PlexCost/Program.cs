@@ -28,7 +28,7 @@ namespace PlexCost
                 PlexCostConfig.Validate(config);
 
                 // Initialize Discord bot
-                var discord = new DiscordService(config.DiscordBotToken, config.SavingsJsonPath);
+                var discord = new DiscordService(config.DiscordBotToken, config.SavingsJsonPath, logChannelId: config.DiscordLogChannelId);
                 await discord.InitializeAsync();
                 LogInformation("Discord slash‐command service initialized.");
 
@@ -48,7 +48,7 @@ namespace PlexCost
                         try
                         {
                             // Query Tautulli API for the last 2 days of history
-                            var after = DateTime.Now.AddDays(-2).ToString("yyyy-MM-dd");
+                            var after = DateTime.Now.AddDays(-config.HistoryDaysBack).ToString("yyyy-MM-dd");
                             var endpoint =
                                 $"http://{config.IpAddress}:{config.Port}/api/v2?apikey={config.ApiKey}" +
                                 $"&cmd=get_history&after={after}&length=10000";
