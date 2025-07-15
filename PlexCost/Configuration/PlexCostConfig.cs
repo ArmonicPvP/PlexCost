@@ -25,6 +25,10 @@ namespace PlexCost.Configuration
             string? hrsEnv = GetEnvironmentVariable("HOURS_BETWEEN_RUNS");
             config.HoursBetweenRuns = int.TryParse(hrsEnv, out var hrs) ? hrs : 6;
 
+            // HISTIRY_DAYS_BACK → default 2 days
+            string? daysBackEnv = GetEnvironmentVariable("HISTORY_DAYS_BACK");
+            config.HistoryDaysBack = int.TryParse(daysBackEnv, out var db) ? db : 2;
+
             // BASE_SUBSCRIPTION_PRICE → default $13.99
             string? priceEnv = GetEnvironmentVariable("BASE_SUBSCRIPTION_PRICE");
             config.BaseSubscriptionPrice = double.TryParse(priceEnv, out var price) ? price : 13.99;
@@ -42,6 +46,10 @@ namespace PlexCost.Configuration
             config.ApiKey = GetEnvironmentVariable("API_KEY") ?? "";
             config.PlexToken = GetEnvironmentVariable("PLEX_TOKEN") ?? "";
             config.DiscordBotToken = GetEnvironmentVariable("DISCORD_BOT_TOKEN") ?? "";
+
+            // DISCORD_LOG_CHANNEL_ID → default 0 (off)
+            string? logChanEnv = GetEnvironmentVariable("DISCORD_LOG_CHANNEL_ID");
+            config.DiscordLogChannelId = ulong.TryParse(logChanEnv, out var cid) ? cid : 0UL;
 
             // Log Analytics
             config.LogAnalyticsEndpoint = GetEnvironmentVariable("LOG_ANALYTICS_ENDPOINT") ?? "";

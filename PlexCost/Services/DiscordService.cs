@@ -11,11 +11,14 @@ namespace PlexCost.Services
         private readonly DiscordSocketClient _client;
         private readonly string _token;
         private readonly string _savingsPath;
+        private readonly ulong? _logChannelId;
 
-        public DiscordService(string botToken, string savingsJsonPath)
+        public DiscordService(string botToken, string savingsJsonPath, ulong? logChannelId = null)
         {
             _token = botToken;
             _savingsPath = savingsJsonPath;
+            _logChannelId = logChannelId;
+
             _client = new DiscordSocketClient(new DiscordSocketConfig
             {
                 GatewayIntents = GatewayIntents.Guilds
@@ -88,6 +91,18 @@ namespace PlexCost.Services
             );
 
             await command.RespondAsync(embed: embed.Build(), ephemeral: false);
+        }
+
+        public async Task SendLogAsync(string level, string message)
+        {
+            if (_logChannelId is null || _logChannelId == 0) return;
+
+            var channel = _client.GetChannel(_logChannelId.Value) as IMessageChannel;
+            if (channel is not null)
+            {
+                var prefix = $"[{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}] [{level}] ";
+                await channel.SendMessageAsync(prefix + message);
+            }
         }
     }
 }

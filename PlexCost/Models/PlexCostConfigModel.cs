@@ -5,6 +5,9 @@
         // How many hours to wait between each run of the main loop.
         public int HoursBetweenRuns { get; set; }
 
+        // How far back to go to grab data
+        public int HistoryDaysBack { get; set; }
+
         // Base cost of a Plex subscription, used to compute savings.
         public double BaseSubscriptionPrice { get; set; }
 
@@ -21,7 +24,9 @@
         public string ApiKey { get; set; } = "";
         public string PlexToken { get; set; } = "";
 
+        // Discord bot token and channel ID for notifications
         public string DiscordBotToken { get; set; } = "";
+        public ulong DiscordLogChannelId { get; set; }
 
         //Log Analytics
         public string LogAnalyticsEndpoint { get; set; } = "";
