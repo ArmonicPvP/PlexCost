@@ -13,7 +13,7 @@ namespace PlexCost.Services
         private readonly string _savingsPath;
         private readonly ulong? _logChannelId;
 
-        public DiscordService(string botToken, string savingsJsonPath, ulong? logChannelId = null)
+        public DiscordService(string botToken, string savingsJsonPath = "", ulong? logChannelId = null)
         {
             _token = botToken;
             _savingsPath = savingsJsonPath;
@@ -23,7 +23,11 @@ namespace PlexCost.Services
             {
                 GatewayIntents = GatewayIntents.Guilds
             });
-            _client.SlashCommandExecuted += OnSlashCommandExecutedAsync;
+
+            if (!string.IsNullOrEmpty(savingsJsonPath))
+            {
+                _client.SlashCommandExecuted += OnSlashCommandExecutedAsync;
+            }
         }
 
         public async Task InitializeAsync()
@@ -36,6 +40,9 @@ namespace PlexCost.Services
         private async Task OnSlashCommandExecutedAsync(SocketSlashCommand command)
         {
             if (command.CommandName != "savings")
+                return;
+
+            if (string.IsNullOrWhiteSpace(_savingsPath))
                 return;
 
             var username = (string)command.Data.Options.First().Value!;
