@@ -79,7 +79,7 @@ namespace PlexCost.Services
         public DiscordLogSink(string botToken, ulong channelId)
         {
             // Reuse your DiscordService to send logs
-            _discord = new DiscordService(botToken, "", logChannelId: channelId);
+            _discord = new DiscordService(botToken, "", "", channelId);
             _discord.InitializeAsync().GetAwaiter().GetResult();
 
             // We only care about rendering the final message body
