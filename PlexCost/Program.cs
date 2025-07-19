@@ -28,7 +28,7 @@ namespace PlexCost
                 PlexCostConfig.Validate(config);
 
                 // Initialize Discord bot
-                var discord = new DiscordService(config.DiscordBotToken, config.SavingsJsonPath, logChannelId: config.DiscordLogChannelId);
+                var discord = new DiscordService(config.DiscordBotToken, config.SavingsJsonPath, config.DataJsonPath, config.DiscordLogChannelId);
                 await discord.InitializeAsync();
                 LogInformation("Discord slash‐command service initialized.");
 
