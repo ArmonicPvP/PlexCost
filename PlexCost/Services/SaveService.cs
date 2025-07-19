@@ -20,7 +20,6 @@ namespace PlexCost.Services
             {
                 LogWarning("data.json not found; emitting empty savings JSON.");
                 File.WriteAllText(savingsJsonPath, "{}");
-
                 return;
             }
 
@@ -28,8 +27,10 @@ namespace PlexCost.Services
             try
             {
                 var json = File.ReadAllText(dataJsonPath, Encoding.UTF8);
-                allData = JsonSerializer.Deserialize<Dictionary<int, UserDataJson>>(json, Program.jsonOptions)
-                                 ?? [];
+                allData = JsonSerializer.Deserialize<Dictionary<int, UserDataJson>>(
+                    json,
+                    Program.jsonOptions
+                ) ?? [];
             }
             catch (Exception ex)
             {
@@ -37,9 +38,9 @@ namespace PlexCost.Services
                 allData = [];
             }
 
-            // 2) Re-aggregate into monthly groups
-            var monthlyOldTotals = new Dictionary<(int userId, string user, int year, int month), (double maxSum, double avgSum)>();
-            var monthlySubs = new Dictionary<(int userId, string user, int year, int month), List<HashSet<string>>>();
+            // 2) Group every record by (userId, userName, year, month)
+            var monthlyRecords = new Dictionary<(int userId, string userName, int year, int month),
+                                                 List<DataRecordJson>>();
 
             foreach (var kvp in allData)
             {
@@ -48,66 +49,61 @@ namespace PlexCost.Services
 
                 foreach (var rec in kvp.Value.Records)
                 {
-                    // Convert Unix timestamp to UTC DateTime
-                    var dt = DateTimeOffset.FromUnixTimeSeconds(rec.DateStopped).UtcDateTime;
+                    var dt = DateTimeOffset
+                        .FromUnixTimeSeconds(rec.DateStopped)
+                        .UtcDateTime;
                     var key = (userId, userName, dt.Year, dt.Month);
 
-                    // 2a) accumulate historical sums
-                    if (!monthlyOldTotals.ContainsKey(key))
-                        monthlyOldTotals[key] = (0, 0);
+                    if (!monthlyRecords.ContainsKey(key))
+                        monthlyRecords[key] = [];
 
-                    var (sumMax, sumAvg) = monthlyOldTotals[key];
-                    monthlyOldTotals[key] = (sumMax + rec.MaximumPrice, sumAvg + rec.AveragePrice);
-
-                    // 2b) collect each month's subscription sets
-                    if (!monthlySubs.ContainsKey(key))
-                        monthlySubs[key] = [];
-
-                    var platformSet = new HashSet<string>(
-                        rec.SubscriptionNames ?? [],
-                           StringComparer.OrdinalIgnoreCase
-                    );
-
-
-                    monthlySubs[key].Add(platformSet);
+                    monthlyRecords[key].Add(rec);
                 }
             }
 
-            // 3) Compute set-cover and costs per (user,year,month)
+            // 3) For each month, compute minimal subscriptions and then savings only for uncovered records
             var monthlyResults = new Dictionary<(int, string, int, int),
                                                (double maxSum, double avgSum, double subCost, HashSet<string> chosen)>();
 
-            foreach (var kvp in monthlySubs)
+            foreach (var kvp in monthlyRecords)
             {
                 var (uId, uName, yr, mo) = kvp.Key;
-                var lists = kvp.Value;
+                var records = kvp.Value;
 
-                LogDebug(
-                    "Evaluating minimum subscription coverage for {User} during {Month}/{Year} with {Count} items",
-                    uName, mo, yr, lists.Count
-                );
+                // Build list of available‐platform sets, one per record
+                var platformSets = records
+                    .Select(r => new HashSet<string>(
+                        r.SubscriptionNames ?? [],
+                        StringComparer.OrdinalIgnoreCase
+                    ))
+                    .ToList();
 
-                var (needed, chosen) = ComputeMinimalSetCover(lists);
-
-                LogDebug(
-                   "{User} for {Month}/{Year} needs minimum {Needed} subscriptions - {Subscriptions}",
-                   uName,
-                   mo,
-                   yr,
-                   needed,
-                   string.Join(";", chosen)
-               );
-
+                // 3a) Compute minimal subscription set to cover as many records as possible
+                var (needed, chosen) = ComputeMinimalSetCover(platformSets);
                 var subCost = needed * baseSubscriptionPrice;
 
+                // 3b) Only those records *not* covered by any chosen subscription
+                var uncovered = records
+                    .Where(r => !r.SubscriptionNames
+                                  .Any(p => chosen.Contains(p)))
+                    .ToList();
 
+                // Sum their purchase prices into your “Max/Avg Savings”
+                var maxSum = uncovered.Sum(r => r.MaximumPrice);
+                var avgSum = uncovered.Sum(r => r.AveragePrice);
 
-                monthlyOldTotals.TryGetValue(kvp.Key, out var oldSums);
-                monthlyResults[kvp.Key] = (oldSums.maxSum, oldSums.avgSum, subCost, chosen);
+                LogDebug(
+                    "{User} {Month}/{Year}: subCost={SubCost:F2}, totalRecords={Count}, " +
+                    $"uncoveredRecords={uncovered.Count}, maxSum={maxSum:F2}, avgSum={avgSum:F2}",
+                    uName, mo, yr, subCost, records.Count
+                );
+
+                monthlyResults[kvp.Key] = (maxSum, avgSum, subCost, chosen);
             }
 
-            // 4) Pivot into per-user JSON output
+            // 4) Pivot into per-user savings JSON
             var output = new Dictionary<int, UserSavingsJson>();
+
             foreach (var kvp in monthlyResults)
             {
                 var (uId, uName, yr, mo) = kvp.Key;
@@ -126,24 +122,17 @@ namespace PlexCost.Services
                     Subscriptions = [.. set.OrderBy(x => x)]
                 };
 
-
-                LogDebug("Adding MonthlySavingsJson for User {UserId} ({UserName}) — Year: {Year}, Month: {Month}, Max: {Max}, Avg: {Avg}, Cost: {Cost}, Subscriptions: [{Subs}]",
-                    uId,
-                    uName,
-                    monthDto.Year,
-                    monthDto.Month,
-                    monthDto.MaximumSavings,
-                    monthDto.AverageSavings,
-                    monthDto.SubscriptionCosts,
-                    string.Join(", ", monthDto.Subscriptions)
-                );
-
                 output[uId].MonthlySavings.Add(monthDto);
 
-
-
+                LogDebug(
+                    "Adding MonthlySavingsJson for {User} — {Month}/{Year}: " +
+                    $"Max={monthDto.MaximumSavings}, Avg={monthDto.AverageSavings}, " +
+                    $"Cost={monthDto.SubscriptionCosts}, Subscriptions=[{string.Join(",", set)}]",
+                    uName, mo, yr
+                );
             }
 
+            // 5) Compute per-user totals
             foreach (var user in output.Values)
             {
                 user.Totals = new TotalSavingsJson
@@ -153,7 +142,8 @@ namespace PlexCost.Services
                     TotalSubscriptionCosts = Math.Round(user.MonthlySavings.Sum(m => m.SubscriptionCosts), 2),
                 };
 
-                LogDebug("Computed Totals for {User}: Max={Max}, Avg={Avg}, Cost={Cost}",
+                LogDebug(
+                    "Computed Totals for {User}: Max={Max}, Avg={Avg}, Cost={Cost}",
                     user.UserName,
                     user.Totals.TotalMaximumSavings,
                     user.Totals.TotalAverageSavings,
@@ -161,7 +151,7 @@ namespace PlexCost.Services
                 );
             }
 
-            // 5) Serialize & write savings.json
+            // 6) Write out the new savings.json
             try
             {
                 var outJson = JsonSerializer.Serialize(output, Program.jsonOptions);
@@ -175,7 +165,7 @@ namespace PlexCost.Services
         }
 
         /// <summary>
-        /// Greedy set-cover: pick the fewest platforms covering all records.
+        /// Greedy set-cover: pick the fewest platforms covering the most records.
         /// </summary>
         private static (int Count, HashSet<string> Platforms)
             ComputeMinimalSetCover(List<HashSet<string>> allContentPlatforms)
@@ -187,6 +177,7 @@ namespace PlexCost.Services
                 return (0, new HashSet<string>(StringComparer.OrdinalIgnoreCase));
             }
 
+            // Map platform → which record indices it covers
             var coverage = new Dictionary<string, HashSet<int>>(StringComparer.OrdinalIgnoreCase);
             for (int i = 0; i < n; i++)
             {
@@ -203,15 +194,19 @@ namespace PlexCost.Services
 
             while (uncovered.Count > 0 && coverage.Count > 0)
             {
+                // pick the platform covering the most still-uncovered records
                 var best = coverage
-                    .OrderByDescending(kvp => kvp.Value.Count(idx => uncovered.Contains(idx)))
+                    .OrderByDescending(kvp =>
+                        kvp.Value.Count(idx => uncovered.Contains(idx)))
                     .First();
 
-                var newly = best.Value.Where(idx => uncovered.Contains(idx)).ToList();
-                if (newly.Count == 0) break;
+                var newlyCovered = best.Value.Where(idx => uncovered.Contains(idx)).ToList();
+                if (newlyCovered.Count == 0) break;
 
                 chosen.Add(best.Key);
-                foreach (var idx in newly) uncovered.Remove(idx);
+                foreach (var idx in newlyCovered)
+                    uncovered.Remove(idx);
+
                 coverage.Remove(best.Key);
             }
 
