@@ -25,12 +25,21 @@ namespace PlexCost
             {
 
                 var config = PlexCostConfig.FromEnvironment();
+                LoggerService.Initialize(config);
                 PlexCostConfig.Validate(config);
 
-                // Initialize Discord bot
-                var discord = new DiscordService(config.DiscordBotToken, config.SavingsJsonPath, config.DataJsonPath, config.DiscordLogChannelId);
-                await discord.InitializeAsync();
-                LogInformation("Discord slash‐command service initialized.");
+                // Initialize Discord bot if configured
+                DiscordService? discord = null;
+                if (!string.IsNullOrWhiteSpace(config.DiscordBotToken))
+                {
+                    discord = new DiscordService(config.DiscordBotToken, config.SavingsJsonPath, config.DataJsonPath, config.DiscordLogChannelId);
+                    await discord.InitializeAsync();
+                    LogInformation("Discord slash‐command service initialized.");
+                }
+                else
+                {
+                    LogInformation("Discord credentials not provided; skipping slash-command service initialization.");
+                }
 
                 // Initialize record tracking
                 var recordService = new RecordService(config.DataJsonPath);

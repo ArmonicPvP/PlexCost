@@ -11,23 +11,38 @@ namespace PlexCost.Services
 {
     public static class LogAnalyticsService
     {
-        private static readonly LogsIngestionClient _client;
-        private static readonly string _dcrId;
-        private static readonly string _streamName;
+        private static LogsIngestionClient? _client;
+        private static string? _dcrId;
+        private static string? _streamName;
+        private static bool _configured;
 
-        static LogAnalyticsService()
+        public static void Configure(PlexCostConfigModel cfg)
         {
-            var cfg = PlexCostConfig.FromEnvironment();
+            if (_configured)
+                return;
+
+            if (string.IsNullOrWhiteSpace(cfg.LogAnalyticsEndpoint)
+                || string.IsNullOrWhiteSpace(cfg.LogAnalyticsDataCollectionRuleId)
+                || string.IsNullOrWhiteSpace(cfg.LogAnalyticsStreamName))
+            {
+                // Optional feature; skip initialization when not fully configured.
+                return;
+            }
+
             _client = new LogsIngestionClient(
-                                new Uri(cfg.LogAnalyticsEndpoint),
-                                new DefaultAzureCredential()
-                            );
+                new Uri(cfg.LogAnalyticsEndpoint),
+                new DefaultAzureCredential()
+            );
             _dcrId = cfg.LogAnalyticsDataCollectionRuleId;
             _streamName = cfg.LogAnalyticsStreamName;
+            _configured = true;
         }
 
         public static async Task SendLogsAsync(IEnumerable<LogAnalyticsRecord> records)
         {
+            if (!_configured || _client is null || _dcrId is null || _streamName is null)
+                return;
+
             var entries = new List<object>();
             foreach (var rec in records)
             {

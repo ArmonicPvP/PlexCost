@@ -16,8 +16,13 @@ namespace PlexCost.Configuration
         /// </summary>
         public static PlexCostConfigModel FromEnvironment()
         {
-
-            Console.WriteLine("Reading environment variables for configuration...");
+            // Only announce once even if configuration is requested multiple times
+            // (for example, by optional services during startup).
+            if (!_announced)
+            {
+                Console.WriteLine("Reading environment variables for configuration...");
+                _announced = true;
+            }
 
             var config = new PlexCostConfigModel();
 
@@ -63,6 +68,8 @@ namespace PlexCost.Configuration
             return config;
         }
 
+        private static bool _announced;
+
         /// <summary>
         /// Ensures that all critical environment variables are present;
         /// logs a fatal error and throws if anything is missing.
@@ -74,10 +81,6 @@ namespace PlexCost.Configuration
             {
                 ["API_KEY"] = config.ApiKey,
                 ["PLEX_TOKEN"] = config.PlexToken,
-                ["DISCORD_BOT_TOKEN"] = config.DiscordBotToken,
-                ["LOG_ANALYTICS_ENDPOINT"] = config.LogAnalyticsEndpoint,
-                ["LOG_ANALYTICS_DCR_ID"] = config.LogAnalyticsDataCollectionRuleId,
-                ["LOG_ANALYTICS_STREAM_NAME"] = config.LogAnalyticsStreamName,
             };
 
             // For each required variable, make sure it's not empty
@@ -88,6 +91,26 @@ namespace PlexCost.Configuration
                     LogCritical("{Var} environment variable is required but was missing or empty.", kvp.Key);
                     throw new InvalidOperationException($"{kvp.Key} environment variable is required.");
                 }
+            }
+
+            // Warn if optional sinks are only partially configured
+            var discordConfigured = config.DiscordLogChannelId > 0 || !string.IsNullOrWhiteSpace(config.DiscordBotToken);
+            if (discordConfigured && (config.DiscordLogChannelId == 0 || string.IsNullOrWhiteSpace(config.DiscordBotToken)))
+            {
+                LogWarning("Discord logging is partially configured; provide both DISCORD_BOT_TOKEN and DISCORD_LOG_CHANNEL_ID to enable it.");
+            }
+
+            var logAnalyticsConfigured =
+                !string.IsNullOrWhiteSpace(config.LogAnalyticsEndpoint)
+                || !string.IsNullOrWhiteSpace(config.LogAnalyticsDataCollectionRuleId)
+                || !string.IsNullOrWhiteSpace(config.LogAnalyticsStreamName);
+
+            if (logAnalyticsConfigured
+                && (string.IsNullOrWhiteSpace(config.LogAnalyticsEndpoint)
+                    || string.IsNullOrWhiteSpace(config.LogAnalyticsDataCollectionRuleId)
+                    || string.IsNullOrWhiteSpace(config.LogAnalyticsStreamName)))
+            {
+                LogWarning("Log Analytics is partially configured; provide LOG_ANALYTICS_ENDPOINT, LOG_ANALYTICS_DCR_ID, and LOG_ANALYTICS_STREAM_NAME to enable it.");
             }
 
             LogInformation("Configuration validated successfully.");
