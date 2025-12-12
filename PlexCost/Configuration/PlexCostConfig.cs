@@ -41,7 +41,7 @@ namespace PlexCost.Configuration
             // Paths for CSV files, with fallbacks
             config.DataJsonPath = GetEnvironmentVariable("DATA_JSON_PATH") ?? "data.json";
             config.SavingsJsonPath = GetEnvironmentVariable("SAVINGS_JSON_PATH") ?? "savings.json";
-            config.LogsJsonPath = GetEnvironmentVariable("LOGS_JSON_PATH") ?? "logs/plexcost-.json";
+            config.LogsPath = GetEnvironmentVariable("LOGS_PATH") ?? "logs/plexcost.log";
 
             // Network settings
             config.IpAddress = GetEnvironmentVariable("IP_ADDRESS") ?? "127.0.0.1";
@@ -55,11 +55,6 @@ namespace PlexCost.Configuration
             // DISCORD_LOG_CHANNEL_ID → default 0 (off)
             string? logChanEnv = GetEnvironmentVariable("DISCORD_LOG_CHANNEL_ID");
             config.DiscordLogChannelId = ulong.TryParse(logChanEnv, out var cid) ? cid : 0UL;
-
-            // Log Analytics
-            config.LogAnalyticsEndpoint = GetEnvironmentVariable("LOG_ANALYTICS_ENDPOINT") ?? "";
-            config.LogAnalyticsDataCollectionRuleId = GetEnvironmentVariable("LOG_ANALYTICS_DCR_ID") ?? "";
-            config.LogAnalyticsStreamName = GetEnvironmentVariable("LOG_ANALYTICS_STREAM_NAME") ?? "PlexCostLogs";
 
             // Debugging logs
             config.Debug = bool.TryParse(GetEnvironmentVariable("DEBUG"), out var debug) && debug;
@@ -98,19 +93,6 @@ namespace PlexCost.Configuration
             if (discordConfigured && (config.DiscordLogChannelId == 0 || string.IsNullOrWhiteSpace(config.DiscordBotToken)))
             {
                 LogWarning("Discord logging is partially configured; provide both DISCORD_BOT_TOKEN and DISCORD_LOG_CHANNEL_ID to enable it.");
-            }
-
-            var logAnalyticsConfigured =
-                !string.IsNullOrWhiteSpace(config.LogAnalyticsEndpoint)
-                || !string.IsNullOrWhiteSpace(config.LogAnalyticsDataCollectionRuleId)
-                || !string.IsNullOrWhiteSpace(config.LogAnalyticsStreamName);
-
-            if (logAnalyticsConfigured
-                && (string.IsNullOrWhiteSpace(config.LogAnalyticsEndpoint)
-                    || string.IsNullOrWhiteSpace(config.LogAnalyticsDataCollectionRuleId)
-                    || string.IsNullOrWhiteSpace(config.LogAnalyticsStreamName)))
-            {
-                LogWarning("Log Analytics is partially configured; provide LOG_ANALYTICS_ENDPOINT, LOG_ANALYTICS_DCR_ID, and LOG_ANALYTICS_STREAM_NAME to enable it.");
             }
 
             LogInformation("Configuration validated successfully.");

@@ -1,5 +1,3 @@
-using Azure.Identity;
-using Azure.Monitor.Ingestion;
 using Microsoft.Extensions.Logging;
 using PlexCost.Configuration;
 using PlexCost.Models;
@@ -7,16 +5,17 @@ using Serilog;
 using Serilog.Core;
 using Serilog.Events;
 using Serilog.Formatting.Display;
-using Serilog.Formatting.Json;
 
 namespace PlexCost.Services
 {
     public static class LoggerService
     {
+        private const string OutputTemplate = "[{Timestamp:yyyy-MM-dd HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}";
+
         private static readonly Logger FallbackLogger = new LoggerConfiguration()
             .MinimumLevel.Debug()
             .Enrich.FromLogContext()
-            .WriteTo.Console(new JsonFormatter(renderMessage: true))
+            .WriteTo.Console(outputTemplate: OutputTemplate)
             .CreateLogger();
 
         private static bool _initialized;
@@ -39,43 +38,13 @@ namespace PlexCost.Services
                 var loggerConfig = new LoggerConfiguration()
                     .MinimumLevel.Is(logLevel)
                     .Enrich.FromLogContext()
-                    .WriteTo.Console(new JsonFormatter(renderMessage: true))
+                    .WriteTo.Console(outputTemplate: OutputTemplate)
                     .WriteTo.File(
-                        new JsonFormatter(renderMessage: true),
-                        path: cfg.LogsJsonPath,
+                        path: cfg.LogsPath,
+                        outputTemplate: OutputTemplate,
                         rollingInterval: RollingInterval.Day,
                         retainedFileCountLimit: 7
                     );
-
-                // Azure Monitor sink is optional; only configure when all values are present.
-                if (!string.IsNullOrWhiteSpace(cfg.LogAnalyticsEndpoint)
-                    && !string.IsNullOrWhiteSpace(cfg.LogAnalyticsDataCollectionRuleId)
-                    && !string.IsNullOrWhiteSpace(cfg.LogAnalyticsStreamName))
-                {
-                    try
-                    {
-                        var ingestionClient = new LogsIngestionClient(
-                            new Uri(cfg.LogAnalyticsEndpoint),
-                            new DefaultAzureCredential()
-                        );
-
-                        loggerConfig = loggerConfig.WriteTo.Sink(
-                            new AzureMonitorIngestionSink(
-                                ingestionClient,
-                                cfg.LogAnalyticsDataCollectionRuleId,
-                                cfg.LogAnalyticsStreamName
-                            )
-                        );
-                    }
-                    catch (Exception ex)
-                    {
-                        FallbackLogger.Warning(ex, "Log Analytics configured but sink initialization failed. Continuing with console/file logging only.");
-                    }
-                }
-                else
-                {
-                    FallbackLogger.Information("Log Analytics configuration not provided; skipping Azure Monitor sink.");
-                }
 
                 // Discord sink is optional; requires both a channel ID and bot token.
                 if (cfg.DiscordLogChannelId > 0 && !string.IsNullOrWhiteSpace(cfg.DiscordBotToken))

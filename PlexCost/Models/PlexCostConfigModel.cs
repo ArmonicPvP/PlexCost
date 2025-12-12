@@ -14,7 +14,7 @@
         // File paths for input and output CSVs.
         public string DataJsonPath { get; set; } = "";
         public string SavingsJsonPath { get; set; } = "";
-        public string LogsJsonPath { get; set; } = "";
+        public string LogsPath { get; set; } = "";
 
         // Network settings for calling the Tautulli API.
         public string IpAddress { get; set; } = "";
@@ -28,12 +28,6 @@
         public string DiscordBotToken { get; set; } = "";
         public ulong DiscordLogChannelId { get; set; }
 
-        //Log Analytics
-        public string LogAnalyticsEndpoint { get; set; } = "";
-
-        public string LogAnalyticsDataCollectionRuleId { get; set; } = "";
-
-        public string LogAnalyticsStreamName { get; set; } = "";
         public bool Debug { get; set; } = false;
 
     }
