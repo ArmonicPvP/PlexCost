@@ -16,13 +16,7 @@ namespace PlexCost.Configuration
         /// </summary>
         public static PlexCostConfigModel FromEnvironment()
         {
-            // Only announce once even if configuration is requested multiple times
-            // (for example, by optional services during startup).
-            if (!_announced)
-            {
-                Console.WriteLine("Reading environment variables for configuration...");
-                _announced = true;
-            }
+           Console.WriteLine("Reading environment variables for configuration...");
 
             var config = new PlexCostConfigModel();
 
