@@ -367,3 +367,5 @@ FodyWeavers.xsd
 /PlexCost/savings.json
 /PlexCost/data.json
 /launchSettings.json
+/PlexCost/launchSettings.json
+/PlexCost/Properties/launchSettings.json
