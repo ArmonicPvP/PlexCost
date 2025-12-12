@@ -16,8 +16,13 @@ namespace PlexCost.Configuration
         /// </summary>
         public static PlexCostConfigModel FromEnvironment()
         {
-
-            Console.WriteLine("Reading environment variables for configuration...");
+            // Only announce once even if configuration is requested multiple times
+            // (for example, by optional services during startup).
+            if (!_announced)
+            {
+                Console.WriteLine("Reading environment variables for configuration...");
+                _announced = true;
+            }
 
             var config = new PlexCostConfigModel();
 
@@ -36,7 +41,7 @@ namespace PlexCost.Configuration
             // Paths for CSV files, with fallbacks
             config.DataJsonPath = GetEnvironmentVariable("DATA_JSON_PATH") ?? "data.json";
             config.SavingsJsonPath = GetEnvironmentVariable("SAVINGS_JSON_PATH") ?? "savings.json";
-            config.LogsJsonPath = GetEnvironmentVariable("LOGS_JSON_PATH") ?? "logs/plexcost-.json";
+            config.LogsPath = GetEnvironmentVariable("LOGS_PATH") ?? "logs/plexcost.log";
 
             // Network settings
             config.IpAddress = GetEnvironmentVariable("IP_ADDRESS") ?? "127.0.0.1";
@@ -51,17 +56,14 @@ namespace PlexCost.Configuration
             string? logChanEnv = GetEnvironmentVariable("DISCORD_LOG_CHANNEL_ID");
             config.DiscordLogChannelId = ulong.TryParse(logChanEnv, out var cid) ? cid : 0UL;
 
-            // Log Analytics
-            config.LogAnalyticsEndpoint = GetEnvironmentVariable("LOG_ANALYTICS_ENDPOINT") ?? "";
-            config.LogAnalyticsDataCollectionRuleId = GetEnvironmentVariable("LOG_ANALYTICS_DCR_ID") ?? "";
-            config.LogAnalyticsStreamName = GetEnvironmentVariable("LOG_ANALYTICS_STREAM_NAME") ?? "PlexCostLogs";
-
             // Debugging logs
             config.Debug = bool.TryParse(GetEnvironmentVariable("DEBUG"), out var debug) && debug;
 
             // Ensure required settings are set
             return config;
         }
+
+        private static bool _announced;
 
         /// <summary>
         /// Ensures that all critical environment variables are present;
@@ -74,10 +76,6 @@ namespace PlexCost.Configuration
             {
                 ["API_KEY"] = config.ApiKey,
                 ["PLEX_TOKEN"] = config.PlexToken,
-                ["DISCORD_BOT_TOKEN"] = config.DiscordBotToken,
-                ["LOG_ANALYTICS_ENDPOINT"] = config.LogAnalyticsEndpoint,
-                ["LOG_ANALYTICS_DCR_ID"] = config.LogAnalyticsDataCollectionRuleId,
-                ["LOG_ANALYTICS_STREAM_NAME"] = config.LogAnalyticsStreamName,
             };
 
             // For each required variable, make sure it's not empty
@@ -88,6 +86,13 @@ namespace PlexCost.Configuration
                     LogCritical("{Var} environment variable is required but was missing or empty.", kvp.Key);
                     throw new InvalidOperationException($"{kvp.Key} environment variable is required.");
                 }
+            }
+
+            // Warn if optional sinks are only partially configured
+            var discordConfigured = config.DiscordLogChannelId > 0 || !string.IsNullOrWhiteSpace(config.DiscordBotToken);
+            if (discordConfigured && (config.DiscordLogChannelId == 0 || string.IsNullOrWhiteSpace(config.DiscordBotToken)))
+            {
+                LogWarning("Discord logging is partially configured; provide both DISCORD_BOT_TOKEN and DISCORD_LOG_CHANNEL_ID to enable it.");
             }
 
             LogInformation("Configuration validated successfully.");

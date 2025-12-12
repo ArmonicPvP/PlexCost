@@ -1,63 +1,81 @@
-﻿using Azure.Identity;
-using Azure.Monitor.Ingestion;
 using Microsoft.Extensions.Logging;
 using PlexCost.Configuration;
+using PlexCost.Models;
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
 using Serilog.Formatting.Display;
-using Serilog.Formatting.Json;
 
 namespace PlexCost.Services
 {
     public static class LoggerService
     {
+        private const string OutputTemplate = "[{Timestamp:yyyy-MM-dd HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}";
+
+        private static readonly Logger FallbackLogger = new LoggerConfiguration()
+            .MinimumLevel.Debug()
+            .Enrich.FromLogContext()
+            .WriteTo.Console(outputTemplate: OutputTemplate)
+            .CreateLogger();
+
+        private static bool _initialized;
+
         static LoggerService()
         {
-            var cfg = PlexCostConfig.FromEnvironment();
-            var logLevel = cfg.Debug ? LogEventLevel.Debug : LogEventLevel.Information;
+            // Default to the fallback logger so early calls still reach the console.
+            Log.Logger = FallbackLogger;
+        }
 
-            // Azure Monitor sink
-            var ingestionClient = new LogsIngestionClient(
-                new Uri(cfg.LogAnalyticsEndpoint),
-                new DefaultAzureCredential()
-            );
+        public static void Initialize(PlexCostConfigModel cfg)
+        {
+            if (_initialized) return;
 
-            // Base Serilog config
-            var loggerConfig = new LoggerConfiguration()
-                .MinimumLevel.Is(logLevel)
-                .Enrich.FromLogContext()
-                .WriteTo.Console(new JsonFormatter(renderMessage: true))
-                .WriteTo.File(
-                    new JsonFormatter(renderMessage: true),
-                    path: cfg.LogsJsonPath,
-                    rollingInterval: RollingInterval.Day,
-                    retainedFileCountLimit: 7
-                )
-                .WriteTo.Sink(
-                    new AzureMonitorIngestionSink(
-                        ingestionClient,
-                        cfg.LogAnalyticsDataCollectionRuleId,
-                        cfg.LogAnalyticsStreamName
-                    )
-                );
-
-            // If the user set a Discord log channel, wire up our DiscordLogSink
-            if (cfg.DiscordLogChannelId > 0)
+            try
             {
-                loggerConfig = loggerConfig.WriteTo.Sink(
-                    new DiscordLogSink(cfg.DiscordBotToken, cfg.DiscordLogChannelId)
-                );
-            }
+                var logLevel = cfg.Debug ? LogEventLevel.Debug : LogEventLevel.Information;
 
-            // Build the global logger
-            Log.Logger = loggerConfig.CreateLogger();
+                // Base Serilog config
+                var loggerConfig = new LoggerConfiguration()
+                    .MinimumLevel.Is(logLevel)
+                    .Enrich.FromLogContext()
+                    .WriteTo.Console(outputTemplate: OutputTemplate)
+                    .WriteTo.File(
+                        path: cfg.LogsPath,
+                        outputTemplate: OutputTemplate,
+                        rollingInterval: RollingInterval.Day,
+                        retainedFileCountLimit: 7
+                    );
+
+                // Discord sink is optional; requires both a channel ID and bot token.
+                if (cfg.DiscordLogChannelId > 0 && !string.IsNullOrWhiteSpace(cfg.DiscordBotToken))
+                {
+                    loggerConfig = loggerConfig.WriteTo.Sink(
+                        new DiscordLogSink(cfg.DiscordBotToken, cfg.DiscordLogChannelId)
+                    );
+                }
+                else if (cfg.DiscordLogChannelId > 0 || !string.IsNullOrWhiteSpace(cfg.DiscordBotToken))
+                {
+                    FallbackLogger.Warning("Discord logging partially configured; provide both DISCORD_BOT_TOKEN and DISCORD_LOG_CHANNEL_ID to enable the sink.");
+                }
+
+                // Build the global logger
+                Log.Logger = loggerConfig.CreateLogger();
+            }
+            catch (Exception ex)
+            {
+                FallbackLogger.Error(ex, "Failed to initialize structured logging; using console fallback.");
+                Log.Logger = FallbackLogger;
+            }
+            finally
+            {
+                _initialized = true;
+            }
 
             // Hook Serilog into Microsoft.Extensions.Logging
             LoggerFactory.Create(builder =>
             {
                 builder.ClearProviders();
-                builder.AddSerilog(dispose: true);
+                builder.AddSerilog(Log.Logger, dispose: true);
             });
         }
 
