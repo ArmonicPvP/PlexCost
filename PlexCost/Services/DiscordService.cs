@@ -35,6 +35,7 @@ namespace PlexCost.Services
 
         public async Task InitializeAsync()
         {
+            LogDebug("Attempting to log in Discord bot with supplied token.");
             await _client.LoginAsync(TokenType.Bot, _token);
             await _client.StartAsync();
             LogInformation("Discord bot logged in and starting up.");
@@ -43,6 +44,10 @@ namespace PlexCost.Services
         private async Task OnSlashCommandExecutedAsync(SocketSlashCommand command)
         {
             LogInformation("Received slash command: {CommandName}", command.CommandName);
+            LogDebug("Slash command invoked by UserId='{UserId}', GuildId='{GuildId}', OptionsCount={OptionCount}",
+                command.User.Id,
+                (command.GuildId ?? 0).ToString(),
+                command.Data.Options.Count);
             switch (command.CommandName)
             {
                 case "savings":
@@ -58,16 +63,18 @@ namespace PlexCost.Services
 
         private async Task HandleSavingsAsync(SocketSlashCommand command)
         {
-            if (string.IsNullOrWhiteSpace(_savingsPath)) 
+            if (string.IsNullOrWhiteSpace(_savingsPath))
                 return;
 
             var username = (string)command.Data.Options.First().Value!;
+            LogDebug("Handling savings request for user '{Username}' using path '{SavingsPath}'", username, _savingsPath);
             Dictionary<int, UserSavingsJson> allSavings;
             try
             {
                 var json = File.ReadAllText(_savingsPath);
                 allSavings = JsonSerializer.Deserialize<Dictionary<int, UserSavingsJson>>(json, Program.jsonOptions)
                              ?? [];
+                LogDebug("Loaded {SavingsCount} savings records from disk", allSavings.Count);
             }
             catch (Exception ex)
             {
@@ -84,6 +91,8 @@ namespace PlexCost.Services
                 await command.RespondAsync($"❌ No savings found for user `{username}`.", ephemeral: true);
                 return;
             }
+
+            LogDebug("Found savings entry for user '{Username}' with {MonthlyCount} monthly records", username, match.MonthlySavings.Count);
 
             var embed = new EmbedBuilder()
                 .WithTitle($"# Plex Savings for {match.UserName}")
@@ -136,6 +145,7 @@ namespace PlexCost.Services
             var username = (string)opts["username"]!;
             var page = opts.TryGetValue("page", out object? value) ? Convert.ToInt32(value) : 1;
             LogInformation("Fetching data for user '{Username}', page {Page}", username, page);
+            LogDebug("Options received for data command: {Options}", string.Join(", ", opts.Keys));
 
             Dictionary<int, UserDataJson> allData;
             try
@@ -143,6 +153,7 @@ namespace PlexCost.Services
                 var json = File.ReadAllText(_dataPath);
                 allData = JsonSerializer.Deserialize<Dictionary<int, UserDataJson>>(json, Program.jsonOptions)
                           ?? [];
+                LogDebug("Loaded {RecordCount} user data entries from disk", allData.Count);
             }
             catch (Exception ex)
             {
@@ -163,6 +174,7 @@ namespace PlexCost.Services
             const int PageSize = 10;
             var totalRecords = userBucket.Records.Count;
             var totalPages = (int)Math.Ceiling(totalRecords / (double)PageSize);
+            LogDebug("User '{Username}' has {TotalRecords} records; total pages={TotalPages}", username, totalRecords, totalPages);
             if (page < 1 || page > totalPages)
             {
                 await command.RespondAsync($"❌ Page `{page}` is out of range. There are {totalPages} pages.", ephemeral: true);
@@ -175,6 +187,8 @@ namespace PlexCost.Services
                 .Skip((page - 1) * PageSize)
                 .Take(PageSize)
                 .ToList();
+
+            LogDebug("Building data embed for user '{Username}' with {PageItemCount} records on page {Page}", username, pageItems.Count, page);
 
             // Build a single embed for this page
             var embed = new EmbedBuilder()
