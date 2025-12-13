@@ -101,12 +101,10 @@ namespace PlexCost.Services
 
             var recentMonthly = match.MonthlySavings
                 .OrderByDescending(x => new DateTime(x.Year, x.Month, 1))
-                .Take(12)
-                .OrderBy(x => new DateTime(x.Year, x.Month, 1))
                 .ToList();
 
             LogDebug(
-                "Using {MonthlyCount} monthly records after limiting to 12 months for user '{Username}'",
+                "Using {MonthlyCount} monthly records for '{Username}'",
                 recentMonthly.Count,
                 username);
 
@@ -125,16 +123,16 @@ namespace PlexCost.Services
                 .Take(PageSize)
                 .ToList();
 
-            var totalsEmbed = new EmbedBuilder()
-                .WithTitle($"# Total Savings for {match.UserName}")
-                .WithColor(Color.Gold)
-                .AddField("Maximum", $"${match.Totals.TotalMaximumSavings:F2}", true)
-                .AddField("Average", $"${match.Totals.TotalAverageSavings:F2}", true)
-                .AddField("Subscriptions", $"${match.Totals.TotalSubscriptionCosts:F2}", true);
-
             var monthlyEmbed = new EmbedBuilder()
-                .WithTitle($"# Plex Savings for {match.UserName} (Page {page}/{totalPages})")
+                .WithTitle($"Monthly Savings for {match.UserName} (Page {page}/{totalPages})")
                 .WithColor(Color.DarkBlue);
+
+            var totalsEmbed = new EmbedBuilder()
+                .WithTitle($"Total Savings for {match.UserName}")
+                .WithColor(Color.Gold)
+                .AddField("Average", $"${match.Totals.TotalAverageSavings:F2}", true)
+                .AddField("Maximum", $"${match.Totals.TotalMaximumSavings:F2}", true)
+                .AddField("Subscriptions", $"${match.Totals.TotalSubscriptionCosts:F2}", true);
 
             if (pageItems.Count == 0)
             {
@@ -152,7 +150,7 @@ namespace PlexCost.Services
                 }
             }
 
-            await command.RespondAsync(embeds: new[] { totalsEmbed.Build(), monthlyEmbed.Build() }, ephemeral: false);
+            await command.RespondAsync(embeds: new[] { monthlyEmbed.Build(), totalsEmbed.Build(), }, ephemeral: false);
         }
 
         private async Task HandleDataAsync(SocketSlashCommand command)
@@ -227,7 +225,7 @@ namespace PlexCost.Services
 
             // Build a single embed for this page
             var embed = new EmbedBuilder()
-                .WithTitle($"# Data for {userBucket.UserName} (Page {page}/{totalPages})")
+                .WithTitle($"Data for {userBucket.UserName} (Page {page}/{totalPages})")
                 .WithColor(Color.DarkBlue);
 
             foreach (var rec in pageItems)
