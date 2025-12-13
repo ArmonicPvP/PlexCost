@@ -58,10 +58,13 @@ namespace PlexCost.Services
 
         private async Task HandleSavingsAsync(SocketSlashCommand command)
         {
-            if (string.IsNullOrWhiteSpace(_savingsPath)) 
+            if (string.IsNullOrWhiteSpace(_savingsPath))
                 return;
 
-            var username = (string)command.Data.Options.First().Value!;
+            var opts = command.Data.Options.ToDictionary(o => o.Name, o => o.Value);
+            var username = (string)opts["username"]!;
+            var page = opts.TryGetValue("page", out object? value) ? Convert.ToInt32(value) : 1;
+            LogInformation("Fetching savings for user '{Username}', page {Page}", username, page);
             Dictionary<int, UserSavingsJson> allSavings;
             try
             {
@@ -85,30 +88,55 @@ namespace PlexCost.Services
                 return;
             }
 
-            var embed = new EmbedBuilder()
-                .WithTitle($"# Plex Savings for {match.UserName}")
-                .WithColor(Color.DarkBlue);
+            const int MaxEmbedsPerPage = 10;
+            const int MonthlyPageSize = MaxEmbedsPerPage - 1; // Leave room for summary embed
 
-            // Monthly breakdown
-            foreach (var m in match.MonthlySavings.OrderBy(x => (x.Year, x.Month)))
+            var monthlySavings = match.MonthlySavings
+                .OrderBy(x => (x.Year, x.Month))
+                .ToList();
+
+            var totalRecords = monthlySavings.Count;
+            var totalPages = Math.Max(1, (int)Math.Ceiling(totalRecords / (double)Math.Max(1, MonthlyPageSize)));
+            if (page < 1 || page > totalPages)
             {
-                embed.AddField(
-                    $"**{m.Month}/{m.Year}**",
-                    $"Max: ${m.MaximumSavings:F2}\nAvg: ${m.AverageSavings:F2}\nSubscriptions: ${m.SubscriptionCosts:F2}",
-                    inline: false
-                );
+                await command.RespondAsync($"❌ Page `{page}` is out of range. There are {totalPages} pages.", ephemeral: true);
+                return;
             }
 
-            // Totals
-            embed.AddField("\u200B", "\u200B"); // spacer
-            embed.AddField(
-                "**Totals**",
-                $"Max: ${match.Totals.TotalMaximumSavings:F2}\n" +
-                $"Avg: ${match.Totals.TotalAverageSavings:F2}\n" +
-                $"Subscriptions: ${match.Totals.TotalSubscriptionCosts:F2}"
-            );
+            var pageItems = monthlySavings
+                .Skip((page - 1) * MonthlyPageSize)
+                .Take(MonthlyPageSize)
+                .ToList();
 
-            await command.RespondAsync(embed: embed.Build(), ephemeral: false);
+            var embeds = new List<EmbedBuilder>();
+
+            // Summary embed with totals and pagination info
+            var summary = new EmbedBuilder()
+                .WithTitle($"# Plex Savings for {match.UserName} (Page {page}/{totalPages})")
+                .WithColor(Color.DarkBlue)
+                .WithDescription(
+                    $"**Totals**\n" +
+                    $"Max: ${match.Totals.TotalMaximumSavings:F2}\n" +
+                    $"Avg: ${match.Totals.TotalAverageSavings:F2}\n" +
+                    $"Subscriptions: ${match.Totals.TotalSubscriptionCosts:F2}");
+            embeds.Add(summary);
+
+            foreach (var m in pageItems)
+            {
+                var subscriptions = m.Subscriptions.Count != 0
+                    ? string.Join(", ", m.Subscriptions)
+                    : "None";
+
+                embeds.Add(new EmbedBuilder()
+                    .WithTitle($"{m.Month}/{m.Year}")
+                    .WithColor(Color.DarkBlue)
+                    .AddField("Maximum Savings", $"${m.MaximumSavings:F2}", inline: true)
+                    .AddField("Average Savings", $"${m.AverageSavings:F2}", inline: true)
+                    .AddField("Subscription Costs", $"${m.SubscriptionCosts:F2}", inline: true)
+                    .AddField("Subscriptions", subscriptions, inline: false));
+            }
+
+            await command.RespondAsync(embeds: embeds.Select(e => e.Build()).ToArray(), ephemeral: false);
         }
 
         private async Task HandleDataAsync(SocketSlashCommand command)
