@@ -362,7 +362,5 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 /PlexCost/.env
-/PlexCost/data.csv
-/PlexCost/savings.csv
-/PlexCost/savings.json
-/PlexCost/data.json
+/PlexCost/data
+/PlexCost/Properties/launchSettings.json
