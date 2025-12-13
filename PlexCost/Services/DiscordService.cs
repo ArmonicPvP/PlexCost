@@ -58,10 +58,13 @@ namespace PlexCost.Services
 
         private async Task HandleSavingsAsync(SocketSlashCommand command)
         {
-            if (string.IsNullOrWhiteSpace(_savingsPath)) 
+            if (string.IsNullOrWhiteSpace(_savingsPath))
                 return;
 
-            var username = (string)command.Data.Options.First().Value!;
+            var opts = command.Data.Options.ToDictionary(o => o.Name, o => o.Value);
+            var username = (string)opts["username"]!;
+            var page = opts.TryGetValue("page", out object? value) ? Convert.ToInt32(value) : 1;
+            LogInformation("Fetching savings for user '{Username}', page {Page}", username, page);
             Dictionary<int, UserSavingsJson> allSavings;
             try
             {
@@ -85,28 +88,51 @@ namespace PlexCost.Services
                 return;
             }
 
-            var embed = new EmbedBuilder()
-                .WithTitle($"# Plex Savings for {match.UserName}")
-                .WithColor(Color.DarkBlue);
+            const int MonthlyPageSize = 12;
 
-            // Monthly breakdown
-            foreach (var m in match.MonthlySavings.OrderBy(x => (x.Year, x.Month)))
+            var monthlySavings = match.MonthlySavings
+                .OrderByDescending(x => (x.Year, x.Month))
+                .ToList();
+
+            var totalRecords = monthlySavings.Count;
+            var totalPages = Math.Max(1, (int)Math.Ceiling(totalRecords / (double)MonthlyPageSize));
+            if (page < 1 || page > totalPages)
             {
-                embed.AddField(
-                    $"**{m.Month}/{m.Year}**",
-                    $"Max: ${m.MaximumSavings:F2}\nAvg: ${m.AverageSavings:F2}\nSubscriptions: ${m.SubscriptionCosts:F2}",
-                    inline: false
-                );
+                await command.RespondAsync($"❌ Page `{page}` is out of range. There are {totalPages} pages.", ephemeral: true);
+                return;
             }
 
-            // Totals
-            embed.AddField("\u200B", "\u200B"); // spacer
-            embed.AddField(
-                "**Totals**",
-                $"Max: ${match.Totals.TotalMaximumSavings:F2}\n" +
-                $"Avg: ${match.Totals.TotalAverageSavings:F2}\n" +
-                $"Subscriptions: ${match.Totals.TotalSubscriptionCosts:F2}"
-            );
+            var pageItems = monthlySavings
+                .Skip((page - 1) * MonthlyPageSize)
+                .Take(MonthlyPageSize)
+                .ToList();
+
+            // Single embed summarizing totals and the latest 12 months on the requested page
+            var embed = new EmbedBuilder()
+                .WithTitle($"# Plex Savings for {match.UserName} (Page {page}/{totalPages})")
+                .WithColor(Color.DarkBlue)
+                .WithDescription(
+                    $"**Totals**\n" +
+                    $"Max: ${match.Totals.TotalMaximumSavings:F2}\n" +
+                    $"Avg: ${match.Totals.TotalAverageSavings:F2}\n" +
+                    $"Subscriptions: ${match.Totals.TotalSubscriptionCosts:F2}");
+
+            foreach (var m in pageItems)
+            {
+                var subscriptions = m.Subscriptions.Count != 0
+                    ? string.Join(", ", m.Subscriptions)
+                    : "None";
+
+                var monthLabel = new DateTime(m.Year, m.Month, 1).ToString("MMMM yyyy");
+                var fieldValue = new StringBuilder()
+                    .AppendLine($"Maximum Savings: ${m.MaximumSavings:F2}")
+                    .AppendLine($"Average Savings: ${m.AverageSavings:F2}")
+                    .AppendLine($"Subscription Costs: ${m.SubscriptionCosts:F2}")
+                    .Append($"Subscriptions: {subscriptions}")
+                    .ToString();
+
+                embed.AddField(monthLabel, fieldValue, inline: false);
+            }
 
             await command.RespondAsync(embed: embed.Build(), ephemeral: false);
         }
