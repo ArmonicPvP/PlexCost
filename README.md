@@ -13,7 +13,7 @@ PlexCost is a .NET console application that automates the retrieval of Plex watc
 
   * `data.json`: raw per-user history with pricing details
   * `savings.json`: per-user monthly savings and grand totals
-* **Structured JSON logging** via Serilog (console + rolling files)
+* **Line-based logging** via Serilog (console + rolling log file)
 
 ## Prerequisites
 
@@ -25,21 +25,26 @@ PlexCost is a .NET console application that automates the retrieval of Plex watc
 
 Configure the application via environment variables. Defaults are applied when variables are omitted (except required ones).
 
-| Variable                  | Description                                   | Default        | Required |
-| ------------------------- | --------------------------------------------- | -------------- | -------- |
-| `HOURS_BETWEEN_RUNS`      | Interval between runs (hours)                 | `6`            | No       |
-| `BASE_SUBSCRIPTION_PRICE` | Price per subscription (for cost computation) | `13.99`        | No       |
-| `DATA_JSON_PATH`          | Path to raw data JSON input/output            | `data.json`    | No       |
-| `SAVINGS_JSON_PATH`       | Path to computed savings JSON output          | `savings.json` | No       |
-| `IP_ADDRESS`              | Tautulli server IP address                    | `127.0.0.1`    | No       |
-| `PORT`                    | Tautulli server port                          | `80`           | No       |
-| `API_KEY`                 | Tautulli API key                              | *none*         | Yes      |
-| `PLEX_TOKEN`              | Plex Discover API token                       | *none*         | Yes      |
+| Variable                  | Description                                          | Default            | Required |
+| ------------------------- | ---------------------------------------------------- | ------------------ | -------- |
+| `HOURS_BETWEEN_RUNS`      | Interval between runs (hours)                        | `6`                | No       |
+| `HISTORY_DAYS_BACK`       | Number of days of history to pull each run           | `2`                | No       |
+| `BASE_SUBSCRIPTION_PRICE` | Price per subscription (for cost computation)        | `13.99`            | No       |
+| `DATA_JSON_PATH`          | Path to raw data JSON input/output                   | `data.json`        | No       |
+| `SAVINGS_JSON_PATH`       | Path to computed savings JSON output                 | `savings.json`     | No       |
+| `LOGS_PATH`               | Path to rolling text log file                        | `logs/plexcost.log` | No       |
+| `IP_ADDRESS`              | Tautulli server IP address                           | `127.0.0.1`        | No       |
+| `PORT`                    | Tautulli server port                                 | `80`               | No       |
+| `API_KEY`                 | Tautulli API key                                     | *none*             | Yes      |
+| `PLEX_TOKEN`              | Plex Discover API token                              | *none*             | Yes      |
+| `DISCORD_BOT_TOKEN`       | Discord bot token for optional log and slash support | *none*             | No       |
+| `DISCORD_LOG_CHANNEL_ID`  | Discord channel ID to forward warnings/errors        | *none*             | No       |
+| `DEBUG`                   | Set to `true` to enable debug logging                | `false`            | No       |
 
 ## Architecture Overview
 
 * **PlexCost.Configuration.PlexCostConfig**: Reads and validates environment variables.
-* **PlexCost.Services.LoggerService**: Sets up Serilog for JSON-formatted logging.
+* **PlexCost.Services.LoggerService**: Sets up Serilog for line-based logging to console, file, and optionally Discord.
 * **GetHistory**: Fetches Tautulli history, filters by watch completion, maps to lightweight model.
 * **GetPricing**: Calls Plex Discover endpoint to obtain max/avg prices and subscription platforms, with retry/backoff.
 * **RecordService**: Tracks processed history in `data.json`, appends new records, avoids duplicates.
@@ -74,13 +79,23 @@ dotnet publish -c Release -r win-x64 --self-contained true
 
 ## Logging
 
-* **Format**: JSON (renderMessage: true)
+* **Format**: Plain text lines
 * **Targets**:
 
   * **Console** (stdout)
-  * **Files**: `logs/plexcost-<date>.json` (daily rolling, retain 7 days)
+  * **Files**: `LOGS_PATH` (defaults to `logs/plexcost.log`, daily rolling, retain 7 days)
+  * **Discord**: optional warning/error forwarding when both `DISCORD_BOT_TOKEN` and `DISCORD_LOG_CHANNEL_ID` are provided
 
 Log levels: Debug, Information, Warning, Error, Critical.
+
+To enable debug logging, set `DEBUG=true`.
+
+## GitHub Actions
+
+Two workflows are provided in `.github/workflows`:
+
+* **ci.yml** – builds the Docker image on pull requests to ensure the container still compiles.
+* **publish.yml** – runs on pushes to `master` and builds/pushes the Docker image. Provide `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` repository secrets so the workflow can authenticate to Docker Hub.
 
 ## Contributing
 
